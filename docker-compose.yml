@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  triton_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: > 
+        sh -c "tritonserver --model-repository /data/models --exit-timeout-secs 300"
+    volumes:
+      - ./models:/data/models
+      - ./data:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [ gpu ]
+    shm_size: '1gb'
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+  tf_serving_server:
+    build:
+      context: .
+      dockerfile: tf_serving/Dockerfile
+    volumes:
+      - type: bind
+        source: ./data/models.conf
+        target: /etc/config/models.conf
+      - ./data:/data/
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [ gpu ]
+    ports:
+      - "8501:8501"
+      - "8500:8500"
